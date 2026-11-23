@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Boris Enev · Mechanical Engineer</title>
+  <meta name="description" content="Portfolio of Boris Enev: mechanical engineering student at Fontys, Eindhoven, building hardware and engineering software.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b1726'/%3E%3Cpath d='M9 8h8a5 5 0 0 1 0 10H9zm0 10h9a5 5 0 0 1 0 10H9z' fill='none' stroke='%235cc8ff' stroke-width='2.5'/%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="cursor-readout" id="cursor-readout" aria-hidden="true">X 000.0 · Y 000.0</div>
+
+  <header class="topbar">
+    <a href="#top" class="brand" aria-label="Back to top">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M9 6h8a5 5 0 0 1 0 10H9zm0 10h9a5 5 0 0 1 0 10H9z" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>
+      <span>B. Enev</span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch colour theme">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="2"/></svg>
+    </button>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow mono" id="hero-eyebrow"></p>
+        <h1 id="hero-name"></h1>
+        <p class="hero-role" id="hero-role"></p>
+        <p class="hero-summary" id="hero-summary"></p>
+        <div class="hero-cta">
+          <a href="#projects" class="btn primary">See the projects</a>
+          <a href="#contact" class="btn">Get in touch</a>
+        </div>
+        <dl class="hero-stats" id="hero-stats"></dl>
+      </div>
+      <div class="hero-drawing">
+        <svg id="hero-svg" viewBox="0 0 520 520" role="img" aria-label="Animated technical drawing of a gear train"></svg>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="section reveal">
+      <div class="section-head">
+        <span class="sec-num mono">01</span>
+        <h2>About</h2>
+      </div>
+      <div class="about-grid">
+        <div class="about-text" id="about-text"></div>
+        <aside class="titleblock" id="about-card"></aside>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section id="experience" class="section reveal">
+      <div class="section-head">
+        <span class="sec-num mono">02</span>
+        <h2>Experience &amp; education</h2>
+      </div>
+      <div class="timeline-filter" role="tablist" id="tl-filter"></div>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <!-- PROJECTS -->
+    <section id="projects" class="section reveal">
+      <div class="section-head">
+        <span class="sec-num mono">03</span>
+        <h2>Projects</h2>
+        <p class="sec-sub">Open a project to run its schematic. Every drawing is live: drag the sliders, flip the switches, hover the parts.</p>
+      </div>
+      <div class="project-filter" id="proj-filter"></div>
+      <div class="projects" id="projects-grid"></div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills" class="section reveal">
+      <div class="section-head">
+        <span class="sec-num mono">04</span>
+        <h2>Skills</h2>
+      </div>
+      <div class="skills" id="skills-grid"></div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section reveal">
+      <div class="section-head">
+        <span class="sec-num mono">05</span>
+        <h2>Contact</h2>
+      </div>
+      <div class="contact" id="contact-box"></div>
+    </section>
+  </main>
+
+  <footer class="footer mono">
+    <span id="footer-name"></span>
+    <span>Drawn in plain HTML, CSS &amp; SVG · no build step</span>
+  </footer>
+
+  <!-- PROJECT SHEET (modal) -->
+  <div class="sheet-wrap" id="sheet" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <article class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <header class="sheet-tb">
+        <div class="tb-cell tb-main">
+          <span class="label">Project</span>
+          <h3 id="sheet-title"></h3>
+        </div>
+        <div class="tb-cell"><span class="label">Context</span><span class="v" id="sheet-context"></span></div>
+        <div class="tb-cell"><span class="label">Year</span><span class="v" id="sheet-year"></span></div>
+        <div class="tb-cell"><span class="label">Sheet</span><span class="v" id="sheet-no"></span></div>
+        <button class="sheet-close" type="button" data-close aria-label="Close project">✕</button>
+      </header>
+      <div class="sheet-body">
+        <div class="schem-area">
+          <div class="schem" id="schem"></div>
+          <div class="schem-controls" id="schem-controls"></div>
+        </div>
+        <div class="sheet-info">
+          <p class="lead" id="sheet-lead"></p>
+          <div id="sheet-readout" class="readout"></div>
+          <h4>What I did</h4>
+          <ul id="sheet-points" class="points"></ul>
+          <h4>Key figures</h4>
+          <dl id="sheet-figs" class="figs"></dl>
+          <div id="sheet-tags" class="tags"></div>
+          <div id="sheet-links" class="sheet-links"></div>
+        </div>
+      </div>
+      <footer class="sheet-nav">
+        <button type="button" class="btn" id="sheet-prev">← Previous</button>
+        <span class="mono muted" id="sheet-hint">Esc to close · ← → to browse</span>
+        <button type="button" class="btn" id="sheet-next">Next →</button>
+      </footer>
+    </article>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/svg.js"></script>
+  <script src="js/schematics.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
