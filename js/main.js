@@ -13,7 +13,6 @@
   }
   let saved = null;
   try { saved = localStorage.getItem("theme"); } catch (e) { /* storage blocked */ }
-  if (!saved && window.matchMedia("(prefers-color-scheme: light)").matches) saved = "light";
   applyTheme(saved);
   themeBtn.addEventListener("click", () => {
     const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
@@ -117,6 +116,8 @@
     // animation: angular velocity shared through the mesh; mouse adds speed
     let w = 0.35, angle = 0, boost = 0;
     hs.addEventListener("pointermove", (e) => { boost = Math.min(6, boost + Math.hypot(e.movementX, e.movementY) * 0.02); });
+    let lastY = window.scrollY;
+    window.addEventListener("scroll", () => { boost = Math.min(8, boost + Math.abs(window.scrollY - lastY) * 0.012); lastY = window.scrollY; }, { passive: true });
     let last = performance.now();
     function frame(now) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -173,22 +174,45 @@
   }
   chips($("tl-filter"), KIND, (k) => tl.querySelectorAll(".tl-item").forEach((li) => li.classList.toggle("hidden", k !== "all" && li.dataset.kind !== k)));
 
-  /* ---------------- Projects ---------------- */
+  /* ---------------- Projects: sticky story ---------------- */
   const grid = $("projects-grid");
   const PROJ = window.PROJECTS;
+  const pad = (n) => String(n).padStart(2, "0");
   grid.innerHTML = PROJ.map((p, i) => `
-    <button type="button" class="pcard reveal" data-i="${i}" data-cat="${p.category}" style="transition-delay:${(i % 3) * 80}ms">
-      <div class="pcard-thumb">${window.THUMBS[p.id] || ""}</div>
-      <div class="pcard-body">
-        <div class="pcard-meta"><span>${p.context}</span><span>${p.year}</span></div>
+    <li class="pstep" data-i="${i}">
+      <div class="pcard">
+        <div class="pcard-thumb">${window.THUMBS[p.id] || ""}</div>
+        <div class="pcard-meta"><span class="n">${pad(i + 1)}</span><span>${p.context}</span><span>${p.year}</span></div>
         <h3>${p.title}</h3>
+        <div class="sub">${p.subtitle}</div>
         <p>${p.blurb}</p>
         <div class="tags">${p.tags.slice(0, 4).map((t) => `<span class="tag">${t}</span>`).join("")}</div>
+        <button type="button" class="btn open" data-i="${i}">Open interactive schematic <span aria-hidden="true">→</span></button>
       </div>
-    </button>`).join("");
-  chips($("proj-filter"), { all: "All", hardware: "Hardware", analysis: "Analysis", software: "Software" }, (k) =>
-    grid.querySelectorAll(".pcard").forEach((c) => c.classList.toggle("hidden", k !== "all" && c.dataset.cat !== k)));
-  grid.querySelectorAll(".pcard").forEach((c) => c.addEventListener("click", () => openSheet(+c.dataset.i)));
+    </li>`).join("");
+  $("stage-thumbs").innerHTML = PROJ.map((p, i) => `<div data-i="${i}">${window.THUMBS[p.id] || ""}</div>`).join("");
+  $("stage-dots").innerHTML = PROJ.map(() => "<i></i>").join("");
+  grid.querySelectorAll(".open").forEach((b) => b.addEventListener("click", () => openSheet(+b.dataset.i)));
+  $("stage-thumbs").parentElement.addEventListener("click", () => openSheet(storyIdx));
+  $("stage-thumbs").parentElement.style.cursor = "pointer";
+  let storyIdx = 0;
+  function setStory(i) {
+    storyIdx = i;
+    grid.querySelectorAll(".pstep").forEach((li, j) => li.classList.toggle("on", j === i));
+    $("stage-thumbs").querySelectorAll("div").forEach((d, j) => d.classList.toggle("on", j === i));
+    $("stage-dots").querySelectorAll("i").forEach((d, j) => d.classList.toggle("on", j === i));
+    $("stage-no").textContent = `${pad(i + 1)} / ${pad(PROJ.length)} · ${PROJ[i].category.toUpperCase()}`;
+  }
+  setStory(0);
+  const storyIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting) setStory(+e.target.dataset.i);
+  }), { rootMargin: "-48% 0px -48% 0px" });
+  grid.querySelectorAll(".pstep").forEach((li) => storyIO.observe(li));
+  // on narrow screens each card simply fades in as it arrives
+  const cardIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting && window.innerWidth <= 900) e.target.classList.add("on");
+  }), { threshold: 0.25 });
+  grid.querySelectorAll(".pstep").forEach((li) => cardIO.observe(li));
 
   /* ---------------- Project sheet ---------------- */
   const sheet = $("sheet");
@@ -289,15 +313,86 @@
       </a>`).join("")}
     </div>`;
 
-  /* ---------------- Reveal on scroll + active nav ---------------- */
-  const io = new IntersectionObserver((entries) => entries.forEach((e) => {
-    if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-  }), { threshold: 0.12 });
-  document.querySelectorAll(".reveal, .skill-group").forEach((el) => io.observe(el));
+  /* ---------------- Guided journey ---------------- */
+  // 1. split section titles into words that rise in
+  document.querySelectorAll(".sec-title").forEach((h) => {
+    h.innerHTML = h.textContent.split(" ").map((w, i) => `<span class="w" style="--wi:${i}"><span>${w}</span></span>`).join(" ");
+  });
+  // 2. staged reveal order inside each section
+  const stage = (sel) => document.querySelectorAll(sel).forEach((el, i) => { el.classList.add("rv"); el.style.setProperty("--d", i); });
+  stage("#about .about-text p"); stage("#about .titleblock");
+  document.querySelectorAll(".sec-sub, .timeline-filter").forEach((el) => { el.classList.add("rv"); el.style.setProperty("--d", 2); });
+  stage("#skills .skill-group");
+  document.querySelectorAll("#skills .skill-group").forEach((g, gi) => g.querySelectorAll(".skill-bar i").forEach((b, bi) => b.style.setProperty("--d", gi * 2 + bi)));
+  stage("#contact .contact-lead, #contact .contact-link");
+  stage("#projects .story");
 
+  const sections = [...document.querySelectorAll("main > section[id]")];
+  const secIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (e.isIntersecting) { e.target.classList.add("in"); secIO.unobserve(e.target); }
+  }), { threshold: 0.08, rootMargin: "0px 0px -12% 0px" });
+  sections.forEach((s) => secIO.observe(s));
+
+  // 3. progress rail
+  const railNodes = $("rail-nodes"), rail = $("rail");
+  railNodes.innerHTML = sections.map((s, i) => `<li style="top:${(i / (sections.length - 1)) * 100}%"><a href="#${s.id}"><span class="dot"></span><span class="txt">${pad(i)} ${s.dataset.title}</span></a></li>`).join("");
+  const railItems = [...railNodes.children];
+
+  // 4. next-step prompt
+  const pill = $("next-pill"), pillLabel = $("next-label"), pillK = $("next-k");
+  let curSec = 0;
+  pill.addEventListener("click", () => {
+    const target = curSec >= sections.length - 1 ? sections[0] : sections[curSec + 1];
+    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  });
+  $("start-tour").addEventListener("click", (e) => { e.preventDefault(); sections[1].scrollIntoView({ behavior: reduce ? "auto" : "smooth" }); });
+
+  // 5. per-frame scroll updates (rail, bar, timeline, nav, glow)
+  const bar = $("scroll-bar"), railFill = $("rail-fill"), topbar = document.querySelector(".topbar");
+  let tlProg = $("tl-progress");
+  if (!tlProg) { tlProg = H("span", { class: "tl-progress", id: "tl-progress", "aria-hidden": "true" }); $("timeline").prepend(tlProg); }
+  const tlItems = [...document.querySelectorAll(".tl-item")];
   const navLinks = [...document.querySelectorAll(".nav a")];
-  const spy = new IntersectionObserver((entries) => entries.forEach((e) => {
-    if (e.isIntersecting) navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id));
-  }), { rootMargin: "-45% 0px -50% 0px" });
-  document.querySelectorAll("main section[id]").forEach((s) => spy.observe(s));
+  const glow = document.querySelector(".glow");
+  const GLOW = [[72, 22], [20, 40], [80, 50], [30, 45], [75, 40], [50, 60]];
+  let ticking = false;
+  function onScroll() {
+    ticking = false;
+    const y = window.scrollY, vh = window.innerHeight, max = document.documentElement.scrollHeight - vh;
+    bar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
+    topbar.classList.toggle("scrolled", y > 10);
+    // which section is at the viewport middle, and how far through it
+    const mid = y + vh * 0.5;
+    let idx = 0;
+    sections.forEach((s, i) => { if (s.offsetTop <= mid) idx = i; });
+    const s0 = sections[idx], s1 = sections[idx + 1];
+    const frac = s1 ? Math.min(1, Math.max(0, (mid - s0.offsetTop) / (s1.offsetTop - s0.offsetTop))) : 0;
+    const atEnd = y >= max - 4;
+    if (atEnd) idx = sections.length - 1;
+    const prog = atEnd ? 1 : (idx + frac) / (sections.length - 1);
+    railFill.style.transform = `scaleY(${prog})`;
+    railItems.forEach((li, i) => { li.classList.toggle("done", i < idx); li.classList.toggle("current", i === idx); });
+    rail.classList.toggle("on", y > vh * 0.4 && sheet.hidden);
+    navLinks.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + sections[idx].id));
+    if (idx !== curSec || !pill.dataset.init) {
+      curSec = idx; pill.dataset.init = 1;
+      const last = idx >= sections.length - 1;
+      pill.classList.toggle("up", last);
+      pillLabel.textContent = last ? "Back to the top" : (idx === 0 ? "Begin: " : "Next: ") + sections[idx + 1].dataset.title;
+      pillK.textContent = last ? "end" : `${pad(idx + 1)} / ${pad(sections.length - 1)}`;
+      const g = GLOW[idx] || GLOW[0];
+      glow.style.setProperty("--gx", g[0] + "%"); glow.style.setProperty("--gy", g[1] + "%");
+    }
+    // hide the pill while reading the project story on big screens (it would cover the cards) only when the sheet is open
+    pill.classList.toggle("hide", !sheet.hidden);
+    // timeline draws as you scroll through it
+    const tl = $("timeline"), r = tl.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (vh * 0.6 - r.top) / r.height));
+    tlProg.style.transform = `scaleY(${p})`;
+    tlItems.forEach((li) => li.classList.toggle("lit", li.getBoundingClientRect().top < vh * 0.62 || p >= 1));
+  }
+  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  window.addEventListener("resize", onScroll);
+  new MutationObserver(onScroll).observe(sheet, { attributes: true, attributeFilter: ["hidden"] });
+  onScroll();
 })();

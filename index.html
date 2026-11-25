@@ -7,13 +7,28 @@
   <meta name="description" content="Portfolio of Boris Enev: mechanical engineering student at Fontys, Eindhoven, building hardware and engineering software.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b1726'/%3E%3Cpath d='M9 8h8a5 5 0 0 1 0 10H9zm0 10h9a5 5 0 0 1 0 10H9z' fill='none' stroke='%235cc8ff' stroke-width='2.5'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2305070b'/%3E%3Cpath d='M9 8h8a5 5 0 0 1 0 10H9zm0 10h9a5 5 0 0 1 0 10H9z' fill='none' stroke='%235cc8ff' stroke-width='2.5'/%3E%3C/svg%3E">
 </head>
 <body>
   <div class="grid-bg" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="scroll-bar" aria-hidden="true"><i id="scroll-bar"></i></div>
   <div class="cursor-readout" id="cursor-readout" aria-hidden="true">X 000.0 · Y 000.0</div>
+
+  <!-- Journey rail: shows where you are and lets you jump -->
+  <nav class="rail" id="rail" aria-label="Page progress">
+    <div class="rail-track"><i id="rail-fill"></i></div>
+    <ol id="rail-nodes"></ol>
+  </nav>
+
+  <!-- Guided "next" prompt -->
+  <button type="button" class="next-pill" id="next-pill">
+    <span class="next-k mono" id="next-k">01 / 05</span>
+    <span id="next-label">Begin: About</span>
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14m0 0l-6-6m6 6l6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
 
   <header class="topbar">
     <a href="#top" class="brand" aria-label="Back to top">
@@ -34,15 +49,15 @@
 
   <main id="top">
     <!-- HERO -->
-    <section class="hero">
+    <section class="hero" id="intro" data-title="Intro">
       <div class="hero-text">
         <p class="eyebrow mono" id="hero-eyebrow"></p>
         <h1 id="hero-name"></h1>
         <p class="hero-role" id="hero-role"></p>
         <p class="hero-summary" id="hero-summary"></p>
         <div class="hero-cta">
-          <a href="#projects" class="btn primary">See the projects</a>
-          <a href="#contact" class="btn">Get in touch</a>
+          <a href="#about" class="btn primary" id="start-tour">Start the tour <span aria-hidden="true">↓</span></a>
+          <a href="#projects" class="btn">Jump to projects</a>
         </div>
         <dl class="hero-stats" id="hero-stats"></dl>
       </div>
@@ -52,10 +67,10 @@
     </section>
 
     <!-- ABOUT -->
-    <section id="about" class="section reveal">
+    <section id="about" class="section" data-title="About">
       <div class="section-head">
         <span class="sec-num mono">01</span>
-        <h2>About</h2>
+        <h2 class="sec-title">About</h2>
       </div>
       <div class="about-grid">
         <div class="about-text" id="about-text"></div>
@@ -64,40 +79,51 @@
     </section>
 
     <!-- EXPERIENCE -->
-    <section id="experience" class="section reveal">
+    <section id="experience" class="section" data-title="Experience">
       <div class="section-head">
         <span class="sec-num mono">02</span>
-        <h2>Experience &amp; education</h2>
+        <h2 class="sec-title">Experience &amp; education</h2>
       </div>
       <div class="timeline-filter" role="tablist" id="tl-filter"></div>
-      <ol class="timeline" id="timeline"></ol>
+      <ol class="timeline" id="timeline"><span class="tl-progress" id="tl-progress" aria-hidden="true"></span></ol>
     </section>
 
     <!-- PROJECTS -->
-    <section id="projects" class="section reveal">
+    <section id="projects" class="section" data-title="Projects">
       <div class="section-head">
         <span class="sec-num mono">03</span>
-        <h2>Projects</h2>
-        <p class="sec-sub">Open a project to run its schematic. Every drawing is live: drag the sliders, flip the switches, hover the parts.</p>
+        <h2 class="sec-title">Projects</h2>
+        <p class="sec-sub">Scroll through six projects. Open any of them to run its schematic: every drawing is live, with sliders to drag, switches to flip and parts to hover.</p>
       </div>
-      <div class="project-filter" id="proj-filter"></div>
-      <div class="projects" id="projects-grid"></div>
+      <div class="story">
+        <div class="story-stage" aria-hidden="true">
+          <div class="stage-frame">
+            <div class="stage-corner tl"></div><div class="stage-corner tr"></div><div class="stage-corner bl"></div><div class="stage-corner br"></div>
+            <div class="stage-thumbs" id="stage-thumbs"></div>
+            <div class="stage-meta">
+              <span class="mono" id="stage-no">01 / 06</span>
+              <span class="stage-dots" id="stage-dots"></span>
+            </div>
+          </div>
+        </div>
+        <ol class="story-steps" id="projects-grid"></ol>
+      </div>
     </section>
 
     <!-- SKILLS -->
-    <section id="skills" class="section reveal">
+    <section id="skills" class="section" data-title="Skills">
       <div class="section-head">
         <span class="sec-num mono">04</span>
-        <h2>Skills</h2>
+        <h2 class="sec-title">Skills</h2>
       </div>
       <div class="skills" id="skills-grid"></div>
     </section>
 
     <!-- CONTACT -->
-    <section id="contact" class="section reveal">
+    <section id="contact" class="section" data-title="Contact">
       <div class="section-head">
         <span class="sec-num mono">05</span>
-        <h2>Contact</h2>
+        <h2 class="sec-title">Contact</h2>
       </div>
       <div class="contact" id="contact-box"></div>
     </section>
